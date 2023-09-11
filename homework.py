@@ -70,7 +70,11 @@ def check_response(response):
 
 def parse_status(homework):
     """Получение информации о статусе и названии конкретной домашней работы."""
-    homework_name, verdict = homework['homework_name'], homework['status']
+    try:
+        if homework['status'] in HOMEWORK_VERDICTS:
+            homework_name, verdict = homework['homework_name'], homework['status']
+    except Exception as error:
+        logging.error(f'Ошибка при запросе к основному API: {error}')
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
