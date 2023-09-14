@@ -16,10 +16,18 @@ logging.basicConfig(
     level=logging.INFO,
     filename='main.log',
     format='%(asctime)s, %(levelname)s, %(message)s, %(name)s',
+    filemode='a'
+)
+
+formatter = logging.Formatter(
+    '%(asctime)s, %(levelname)s, %(message)s, %(name)s'
 )
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -128,6 +136,8 @@ def main():
             if updated_message != message:
                 send_message(bot, updated_message)
                 message = updated_message
+            else:
+                logging.debug('В ответе от сервера отсутствуют новые статусы')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(f'Ошибка в работе программы: {error}')
