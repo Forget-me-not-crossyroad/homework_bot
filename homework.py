@@ -14,7 +14,7 @@ from expections import ApiGetRequestError
 load_dotenv()
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     filename='main.log',
     format='%(asctime)s, %(levelname)s, %(message)s, %(name)s',
     filemode='a',
@@ -25,7 +25,7 @@ formatter = logging.Formatter(
 )
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(sys.stdout)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -45,16 +45,18 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.',
 }
 
+TOKEN_NAMES = ('PRACTICUM_TOKEN', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID')
+
 
 def check_tokens():
     """Проверка наличия необходимых для работы бота переменных окружения."""
-    turple_tokens = (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
-
-    for name in turple_tokens:
-        if not name:  # Данный подход был выбран из-за проблем
-            #  с автотестами при использовании предложенных конструкций
-            logging.critical(f'Отсутствует переменная окружения {name}')
-            sys.exit(1)
+    for name in TOKEN_NAMES:  # Все-таки получилось
+        if not globals()[name]:
+            raise KeyError(
+                logging.critical(
+                    f'Отсутствует переменная окружения {name}', exc_info=True
+                )
+            )
 
 
 def send_message(bot, message):
@@ -102,7 +104,12 @@ def check_response(response):
             )
         )
     if response.get('homeworks') is None:
-        raise KeyError(logging.error('Отсутствует ключ "homeworks"'))
+        raise KeyError(
+            logging.error(
+                'Отсутствует ключ "homeworks"',
+                exc_info=True,
+            )
+        )
     if isinstance(response['homeworks'], list) is not True:
         raise TypeError(
             logging.error(
@@ -151,8 +158,8 @@ def main():
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(f'Ошибка в работе программы: {error}', exc_info=True)
-
-        time.sleep(RETRY_PERIOD)
+        finally:
+            time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':
