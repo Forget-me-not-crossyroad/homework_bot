@@ -7,8 +7,9 @@ from http import HTTPStatus
 import requests
 import telegram
 from dotenv import load_dotenv
+from telegram import TelegramError
 
-from expections import ApiGetRequestError, SendMessageError
+from expections import ApiGetRequestError
 
 load_dotenv()
 
@@ -16,7 +17,7 @@ logging.basicConfig(
     level=logging.INFO,
     filename='main.log',
     format='%(asctime)s, %(levelname)s, %(message)s, %(name)s',
-    filemode='a'
+    filemode='a',
 )
 
 formatter = logging.Formatter(
@@ -45,32 +46,25 @@ HOMEWORK_VERDICTS = {
 }
 
 
-TOKENS_LIST = ['PRACTICUM_TOKEN', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID']
-
-
 def check_tokens():
     """Проверка наличия необходимых для работы бота переменных окружения."""
-    if PRACTICUM_TOKEN is None or PRACTICUM_TOKEN == '':
-        logging.critical(
-            'Отсутствует или пуста переменная окружения PRACTICUM_TOKEN'
-        )
-        sys.exit(1)
-    if TELEGRAM_TOKEN is None or TELEGRAM_TOKEN == '':
-        logging.critical('Отсутствует переменная окружения TELEGRAM_TOKEN')
-        sys.exit(1)
-    if TELEGRAM_CHAT_ID is None or TELEGRAM_CHAT_ID == '':
-        logging.critical('Отсутствует переменная окружения TELEGRAM_CHAT_ID')
-        sys.exit(1)
-    else:
-        pass
+    turple_tokens = (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
+
+    for name in turple_tokens:
+        if not name:  # Данный подход был выбран из-за проблем
+            #  с автотестами при использовании предложенных конструкций
+            logging.critical(f'Отсутствует переменная окружения {name}')
+            sys.exit(1)
 
 
 def send_message(bot, message):
     """Отправка ботом сообщения в чат."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-    except SendMessageError as error:
-        logging.error(f'Ошибка при попытке отправить сообщение: {error}')
+    except TelegramError as error:
+        logging.error(
+            f'Ошибка при попытке отправить сообщение: {error}', exc_info=True
+        )
     logging.debug(
         'Сообщение о статусе домашней работы отправлено в телеграм-чат'
     )
@@ -81,30 +75,42 @@ def get_api_answer(timestamp):
     payload = {'from_date': timestamp}
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params=payload)
-    except Exception as error:
-        logging.error(f'Ошибка при запросе к основному API: {error}')
+    except requests.RequestException as error:
+        raise ConnectionError(
+            logging.error(
+                f'Ошибка при запросе' f'к основному API: {error}',
+                exc_info=True,
+            )
+        )
     if response.status_code != HTTPStatus.OK:
         raise ApiGetRequestError(
-            f'Запрос не был выполнен. Код ответа {response.status_code}'
+            logging.error(
+                f'Запрос не был выполнен. Код ответа {response.status_code}',
+                exc_info=True,
+            )
         )
     return response.json()
 
 
 def check_response(response):
     """Проверка соответствия ответа от сервера документации."""
-    if isinstance(response, dict) is not True:
+    if not isinstance(response, dict):
         raise TypeError(
             logging.error(
-                'Возвращаемый ответ имеет тип данных, отличный от dict'
+                'Возвращаемый ответ имеет тип данных, отличный от dict',
+                exc_info=True,
             )
         )
     if response.get('homeworks') is None:
-        raise KeyError(logging.error('Отсутствует ключ'))
+        raise KeyError(logging.error('Отсутствует ключ "homeworks"'))
     if isinstance(response['homeworks'], list) is not True:
         raise TypeError(
-            'Получен некорректный ответ от сервера.'
-            'Тип ключа "homework" или "current_date"'
-            'не соответствует документации'
+            logging.error(
+                'Получен некорректный ответ от сервера.'
+                'Тип ключа "homework" или "current_date"'
+                'не соответствует документации',
+                exc_info=True,
+            )
         )
 
 
@@ -114,8 +120,12 @@ def parse_status(homework):
     try:
         verdict = HOMEWORK_VERDICTS[status]
         homework_name = homework['homework_name']
-    except Exception as error:
-        logging.error(f'Ошибка при запросе к основному API: {error}')
+    except KeyError as error:
+        logging.error(
+            f'В полученном ответе от сервера'
+            f'отсутствует необходимый ключ "{error}"',
+            exc_info=True,
+        )
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
@@ -140,7 +150,7 @@ def main():
                 logging.debug('В ответе от сервера отсутствуют новые статусы')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            logging.error(f'Ошибка в работе программы: {error}')
+            logging.error(f'Ошибка в работе программы: {error}', exc_info=True)
 
         time.sleep(RETRY_PERIOD)
 
