@@ -1,31 +1,61 @@
-Homework Bot
+### Practicum_bot
+
+```
 Телеграм-бот для отслеживания статуса проверки домашней работы на Яндекс.Практикум.
-Присылает сообщения, когда статус изменен - взято в проверку, есть замечания, зачтено.
-Технологии:
-Python 3.9
-python-dotenv 0.19.0
-python-telegram-bot 13.7
-Как запустить проект:
+Задеплоен на https://www.pythonanywhere.com/
+Присылает сообщения при изменении статуса проверки дз - "Проверка", "Есть замечания", "Зачтено".
+```
+
+### Стэк технологий:
+- Python 3.11
+- python-dotenv 0.20.0
+- python-telegram-bot 13.7
+
+### Как запустить проект:
+
 Клонировать репозиторий и перейти в него в командной строке:
 
-git clone https://github.com/Drvmnekta/homework_bot.git
+```
+https://github.com/Forget-me-not-crossyroad/homework_bot
+```
+
+```
 cd homework_bot
+```
+
 Cоздать и активировать виртуальное окружение:
 
-python3 -m venv env
-source env/bin/activate
+```
+python -m venv env (для Linux "python3 -m venv env")
+```
+
+```
+source env/Scripts/activate (для Linux "source env/bin/activate")
+```
+
 Установить зависимости из файла requirements.txt:
 
-python3 -m pip install --upgrade pip
-pip install -r requirements.txt
-Записать в переменные окружения (файл .env) необходимые ключи:
+```
+python -m pip install --upgrade pip (для Linux "python3 -m pip install --upgrade pip")
+```
 
-токен профиля на Яндекс.Практикуме
-токен телеграм-бота
-свой ID в телеграме
+```
+pip install -r requirements.txt
+```
+
+Записать в переменные окружения (файл .env) необходимые ключи:
+- токен профиля студента на Яндекс Практикум
+- токен для телеграм-бота
+- свой ID в телеграме
+
 Выполнить миграции:
 
-python3 manage.py migrate
+```
+python manage.py migrate (для Linux "python3 manage.py migrate")
+```
+
 Запустить проект:
 
-python3 manage.py runserver
+```
+python manage.py runserver (для Linux "python3 manage.py runserver")
+```
